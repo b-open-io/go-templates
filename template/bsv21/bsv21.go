@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bitcoin-sv/go-templates/inscription"
-	"github.com/bsv-blockchain/go-sdk/overlay"
 	"github.com/bsv-blockchain/go-sdk/script"
+	"github.com/bsv-blockchain/go-templates/lib"
+	"github.com/bsv-blockchain/go-templates/template/inscription"
 )
 
 type Bsv21 struct {
@@ -63,7 +63,7 @@ func Decode(scr *script.Script) *Bsv21 {
 		case "transfer", "burn":
 			if id, ok := data["id"]; !ok {
 				return nil
-			} else if _, err = overlay.NewOutpointFromString(id); err != nil {
+			} else if _, err = lib.NewOutpointFromString(id); err != nil {
 				return nil
 			} else {
 				bsv21.Id = id
