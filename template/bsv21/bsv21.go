@@ -5,9 +5,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/bitcoin-sv/go-templates/lib"
-	"github.com/bitcoin-sv/go-templates/template/inscription"
 	"github.com/bsv-blockchain/go-sdk/script"
+	"github.com/bsv-blockchain/go-templates/lib"
+	"github.com/bsv-blockchain/go-templates/template/inscription"
 )
 
 type Op string

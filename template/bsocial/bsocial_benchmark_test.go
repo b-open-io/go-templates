@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/bitcoin-sv/go-templates/template/bitcom"
 	"github.com/bsv-blockchain/go-sdk/script"
 	"github.com/bsv-blockchain/go-sdk/transaction"
+	"github.com/bsv-blockchain/go-templates/template/bitcom"
 )
 
 // loadTransactionForBenchmark loads a real transaction from the test data

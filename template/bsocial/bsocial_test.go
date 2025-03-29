@@ -3,8 +3,8 @@ package bsocial
 import (
 	"testing"
 
-	"github.com/bitcoin-sv/go-templates/template/bitcom"
 	ec "github.com/bsv-blockchain/go-sdk/primitives/ec"
+	"github.com/bsv-blockchain/go-templates/template/bitcom"
 	"github.com/stretchr/testify/require"
 )
 

@@ -3,11 +3,9 @@ package bsocial
 import (
 	"fmt"
 
-	"github.com/bitcoin-sv/go-templates/template/bitcom"
-	"github.com/bitcoin-sv/go-templates/template/p2pkh"
-	"github.com/bitcoinschema/go-aip"
-	ec "github.com/bsv-blockchain/go-sdk/primitives/ec"
-	"github.com/bsv-blockchain/go-sdk/script"
+	"github.com/bsv-blockchain/go-templates/template/bitcom"
+	// "github.com/bitcoinschema/go-aip"
+
 	"github.com/bsv-blockchain/go-sdk/transaction"
 )
 
@@ -247,455 +245,455 @@ func createAction(actionType BSocialType, m *bitcom.Map) Action {
 	return action
 }
 
-// CreatePost creates a new post transaction
-func CreatePost(post Post, attachments []bitcom.B, tags []string, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
-	tx := transaction.NewTransaction()
+// // CreatePost creates a new post transaction
+// func CreatePost(post Post, attachments []bitcom.B, tags []string, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
+// 	tx := transaction.NewTransaction()
 
-	// Create B protocol output first
-	s := &script.Script{}
-	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
-	_ = s.AppendPushDataString(bitcom.BPrefix)
-	_ = s.AppendPushData(post.B.Data)
-	_ = s.AppendPushDataString(string(post.B.MediaType))
-	_ = s.AppendPushDataString(string(post.B.Encoding))
-	if post.B.Filename != "" {
-		_ = s.AppendPushDataString(post.B.Filename)
-	}
+// 	// Create B protocol output first
+// 	s := &script.Script{}
+// 	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
+// 	_ = s.AppendPushDataString(bitcom.BPrefix)
+// 	_ = s.AppendPushData(post.B.Data)
+// 	_ = s.AppendPushDataString(string(post.B.MediaType))
+// 	_ = s.AppendPushDataString(string(post.B.Encoding))
+// 	if post.B.Filename != "" {
+// 		_ = s.AppendPushDataString(post.B.Filename)
+// 	}
 
-	// Add MAP protocol
-	_ = s.AppendPushDataString("|")
-	_ = s.AppendPushDataString(bitcom.MapPrefix)
-	_ = s.AppendPushDataString("SET")
-	_ = s.AppendPushDataString("app")
-	_ = s.AppendPushDataString(post.App)
-	_ = s.AppendPushDataString("type")
-	_ = s.AppendPushDataString(string(TypePostReply))
+// 	// Add MAP protocol
+// 	_ = s.AppendPushDataString("|")
+// 	_ = s.AppendPushDataString(bitcom.MapPrefix)
+// 	_ = s.AppendPushDataString("SET")
+// 	_ = s.AppendPushDataString("app")
+// 	_ = s.AppendPushDataString(post.App)
+// 	_ = s.AppendPushDataString("type")
+// 	_ = s.AppendPushDataString(string(TypePostReply))
 
-	// Add context if provided
-	if post.Context != "" {
-		_ = s.AppendPushDataString(string(post.Context))
-		_ = s.AppendPushDataString(post.ContextValue)
-	}
+// 	// Add context if provided
+// 	if post.Context != "" {
+// 		_ = s.AppendPushDataString(string(post.Context))
+// 		_ = s.AppendPushDataString(post.ContextValue)
+// 	}
 
-	// Add subcontext if provided
-	if post.Subcontext != "" {
-		_ = s.AppendPushDataString(string(post.Subcontext))
-		_ = s.AppendPushDataString(post.SubcontextValue)
-	}
+// 	// Add subcontext if provided
+// 	if post.Subcontext != "" {
+// 		_ = s.AppendPushDataString(string(post.Subcontext))
+// 		_ = s.AppendPushDataString(post.SubcontextValue)
+// 	}
 
-	// Add AIP signature
-	if identityKey != nil {
-		_ = s.AppendPushDataString("|")
+// 	// Add AIP signature
+// 	if identityKey != nil {
+// 		_ = s.AppendPushDataString("|")
 
-		// make a string from the mapScript
-		data := s.String()
-		_ = s.AppendPushDataString(bitcom.AIPPrefix)
-		_ = s.AppendPushDataString("BITCOIN_ECDSA")
-		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
-		if err != nil {
-			return nil, err
-		}
-		_ = s.AppendPushDataString(sig.Signature)
-		// pubKey := identityKey.PubKey()
-		// mapScript.AppendPushData(pubKey.Compressed())
-	}
+// 		// make a string from the mapScript
+// 		data := s.String()
+// 		_ = s.AppendPushDataString(bitcom.AIPPrefix)
+// 		_ = s.AppendPushDataString("BITCOIN_ECDSA")
+// 		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		_ = s.AppendPushDataString(sig.Signature)
+// 		// pubKey := identityKey.PubKey()
+// 		// mapScript.AppendPushData(pubKey.Compressed())
+// 	}
 
-	tx.AddOutput(&transaction.TransactionOutput{
-		LockingScript: s,
-		Satoshis:      0,
-	})
+// 	tx.AddOutput(&transaction.TransactionOutput{
+// 		LockingScript: s,
+// 		Satoshis:      0,
+// 	})
 
-	// Add tags if present
-	if len(tags) > 0 {
-		tagsScript := &script.Script{}
-		_ = tagsScript.AppendOpcodes(script.OpFALSE, script.OpRETURN)
-		_ = tagsScript.AppendPushDataString(bitcom.MapPrefix)
-		_ = tagsScript.AppendPushDataString("ADD")
-		_ = tagsScript.AppendPushDataString("tags")
-		for _, tag := range tags {
-			_ = tagsScript.AppendPushDataString(tag)
-		}
+// 	// Add tags if present
+// 	if len(tags) > 0 {
+// 		tagsScript := &script.Script{}
+// 		_ = tagsScript.AppendOpcodes(script.OpFALSE, script.OpRETURN)
+// 		_ = tagsScript.AppendPushDataString(bitcom.MapPrefix)
+// 		_ = tagsScript.AppendPushDataString("ADD")
+// 		_ = tagsScript.AppendPushDataString("tags")
+// 		for _, tag := range tags {
+// 			_ = tagsScript.AppendPushDataString(tag)
+// 		}
 
-		tx.AddOutput(&transaction.TransactionOutput{
-			LockingScript: tagsScript,
-			Satoshis:      0,
-		})
-	}
+// 		tx.AddOutput(&transaction.TransactionOutput{
+// 			LockingScript: tagsScript,
+// 			Satoshis:      0,
+// 		})
+// 	}
 
-	return tx, nil
-}
+// 	return tx, nil
+// }
 
-// CreateReply creates a reply to an existing post
-func CreateReply(reply Reply, replyTxID string, utxos []*transaction.UTXO, changeAddress *script.Address, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
-	tx := transaction.NewTransaction()
+// // CreateReply creates a reply to an existing post
+// func CreateReply(reply Reply, replyTxID string, utxos []*transaction.UTXO, changeAddress *script.Address, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
+// 	tx := transaction.NewTransaction()
 
-	// Create B protocol output first
-	s := &script.Script{}
-	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
-	_ = s.AppendPushDataString(bitcom.BPrefix)
-	_ = s.AppendPushData(reply.B.Data)
-	_ = s.AppendPushDataString(string(reply.B.MediaType))
-	_ = s.AppendPushDataString(string(reply.B.Encoding))
-	if reply.B.Filename != "" {
-		_ = s.AppendPushDataString(reply.B.Filename)
-	}
+// 	// Create B protocol output first
+// 	s := &script.Script{}
+// 	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
+// 	_ = s.AppendPushDataString(bitcom.BPrefix)
+// 	_ = s.AppendPushData(reply.B.Data)
+// 	_ = s.AppendPushDataString(string(reply.B.MediaType))
+// 	_ = s.AppendPushDataString(string(reply.B.Encoding))
+// 	if reply.B.Filename != "" {
+// 		_ = s.AppendPushDataString(reply.B.Filename)
+// 	}
 
-	tx.AddOutput(&transaction.TransactionOutput{
-		LockingScript: s,
-		Satoshis:      0,
-	})
+// 	tx.AddOutput(&transaction.TransactionOutput{
+// 		LockingScript: s,
+// 		Satoshis:      0,
+// 	})
 
-	// Create MAP protocol output
+// 	// Create MAP protocol output
 
-	_ = s.AppendPushDataString("|")
-	_ = s.AppendPushDataString(bitcom.MapPrefix)
-	_ = s.AppendPushDataString("SET")
-	_ = s.AppendPushDataString("app")
-	_ = s.AppendPushDataString(AppName)
-	_ = s.AppendPushDataString("type")
-	_ = s.AppendPushDataString(string(TypePostReply))
-	_ = s.AppendPushDataString("context")
-	_ = s.AppendPushDataString("tx")
-	_ = s.AppendPushDataString("tx")
-	_ = s.AppendPushDataString(replyTxID)
+// 	_ = s.AppendPushDataString("|")
+// 	_ = s.AppendPushDataString(bitcom.MapPrefix)
+// 	_ = s.AppendPushDataString("SET")
+// 	_ = s.AppendPushDataString("app")
+// 	_ = s.AppendPushDataString(AppName)
+// 	_ = s.AppendPushDataString("type")
+// 	_ = s.AppendPushDataString(string(TypePostReply))
+// 	_ = s.AppendPushDataString("context")
+// 	_ = s.AppendPushDataString("tx")
+// 	_ = s.AppendPushDataString("tx")
+// 	_ = s.AppendPushDataString(replyTxID)
 
-	// Add AIP signature
-	if identityKey != nil {
-		_ = s.AppendPushDataString("|")
-		_ = s.AppendPushDataString(bitcom.AIPPrefix)
-		_ = s.AppendPushDataString("BITCOIN_ECDSA")
+// 	// Add AIP signature
+// 	if identityKey != nil {
+// 		_ = s.AppendPushDataString("|")
+// 		_ = s.AppendPushDataString(bitcom.AIPPrefix)
+// 		_ = s.AppendPushDataString("BITCOIN_ECDSA")
 
-		// make a string from the mapScript
-		data := s.String()
-		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
-		if err != nil {
-			return nil, err
-		}
-		_ = s.AppendPushDataString(sig.Signature)
-	}
+// 		// make a string from the mapScript
+// 		data := s.String()
+// 		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		_ = s.AppendPushDataString(sig.Signature)
+// 	}
 
-	tx.AddOutput(&transaction.TransactionOutput{
-		LockingScript: s,
-		Satoshis:      0,
-	})
+// 	tx.AddOutput(&transaction.TransactionOutput{
+// 		LockingScript: s,
+// 		Satoshis:      0,
+// 	})
 
-	// Add change output if changeAddress is provided
-	if changeAddress != nil {
-		changeScript, err := p2pkh.Lock(changeAddress)
-		if err != nil {
-			return nil, err
-		}
-		tx.AddOutput(&transaction.TransactionOutput{
-			LockingScript: changeScript,
-			Change:        true,
-		})
-	}
+// 	// Add change output if changeAddress is provided
+// 	if changeAddress != nil {
+// 		changeScript, err := p2pkh.Lock(changeAddress)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		tx.AddOutput(&transaction.TransactionOutput{
+// 			LockingScript: changeScript,
+// 			Change:        true,
+// 		})
+// 	}
 
-	return tx, nil
-}
+// 	return tx, nil
+// }
 
-// CreateLike creates a like transaction
-func CreateLike(likeTxID string, utxos []*transaction.UTXO, changeAddress *script.Address, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
-	tx := transaction.NewTransaction()
-	s := &script.Script{}
-	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
-	_ = s.AppendPushDataString(bitcom.MapPrefix)
-	_ = s.AppendPushDataString("SET")
-	_ = s.AppendPushDataString("app")
-	_ = s.AppendPushDataString(AppName)
-	_ = s.AppendPushDataString("type")
-	_ = s.AppendPushDataString(string(TypeLike))
-	_ = s.AppendPushDataString("context")
-	_ = s.AppendPushDataString(string(ContextTx))
-	_ = s.AppendPushDataString(string(ContextTx))
-	_ = s.AppendPushDataString(likeTxID)
+// // CreateLike creates a like transaction
+// func CreateLike(likeTxID string, utxos []*transaction.UTXO, changeAddress *script.Address, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
+// 	tx := transaction.NewTransaction()
+// 	s := &script.Script{}
+// 	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
+// 	_ = s.AppendPushDataString(bitcom.MapPrefix)
+// 	_ = s.AppendPushDataString("SET")
+// 	_ = s.AppendPushDataString("app")
+// 	_ = s.AppendPushDataString(AppName)
+// 	_ = s.AppendPushDataString("type")
+// 	_ = s.AppendPushDataString(string(TypeLike))
+// 	_ = s.AppendPushDataString("context")
+// 	_ = s.AppendPushDataString(string(ContextTx))
+// 	_ = s.AppendPushDataString(string(ContextTx))
+// 	_ = s.AppendPushDataString(likeTxID)
 
-	// Add AIP signature
-	if identityKey != nil {
-		_ = s.AppendPushDataString("|")
-		_ = s.AppendPushDataString(bitcom.AIPPrefix)
-		_ = s.AppendPushDataString("BITCOIN_ECDSA")
+// 	// Add AIP signature
+// 	if identityKey != nil {
+// 		_ = s.AppendPushDataString("|")
+// 		_ = s.AppendPushDataString(bitcom.AIPPrefix)
+// 		_ = s.AppendPushDataString("BITCOIN_ECDSA")
 
-		// make a string from the script
-		data := s.String()
-		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
-		if err != nil {
-			return nil, err
-		}
-		_ = s.AppendPushDataString(sig.Signature)
-	}
+// 		// make a string from the script
+// 		data := s.String()
+// 		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		_ = s.AppendPushDataString(sig.Signature)
+// 	}
 
-	tx.AddOutput(&transaction.TransactionOutput{
-		LockingScript: s,
-		Satoshis:      0,
-	})
+// 	tx.AddOutput(&transaction.TransactionOutput{
+// 		LockingScript: s,
+// 		Satoshis:      0,
+// 	})
 
-	// Add change output if changeAddress is provided
-	if changeAddress != nil {
-		changeScript, err := p2pkh.Lock(changeAddress)
-		if err != nil {
-			return nil, err
-		}
-		tx.AddOutput(&transaction.TransactionOutput{
-			LockingScript: changeScript,
-			Change:        true,
-		})
-	}
+// 	// Add change output if changeAddress is provided
+// 	if changeAddress != nil {
+// 		changeScript, err := p2pkh.Lock(changeAddress)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		tx.AddOutput(&transaction.TransactionOutput{
+// 			LockingScript: changeScript,
+// 			Change:        true,
+// 		})
+// 	}
 
-	return tx, nil
-}
+// 	return tx, nil
+// }
 
-// CreateUnlike creates an unlike transaction
-func CreateUnlike(unlikeTxID string, utxos []*transaction.UTXO, changeAddress *script.Address, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
-	tx := transaction.NewTransaction()
-	s := &script.Script{}
-	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
-	_ = s.AppendPushDataString(bitcom.MapPrefix)
-	_ = s.AppendPushDataString("SET")
-	_ = s.AppendPushDataString("app")
-	_ = s.AppendPushDataString(AppName)
-	_ = s.AppendPushDataString("type")
-	_ = s.AppendPushDataString(string(TypeUnlike))
-	_ = s.AppendPushDataString("context")
-	_ = s.AppendPushDataString(string(ContextTx))
-	_ = s.AppendPushDataString(string(ContextTx))
-	_ = s.AppendPushDataString(unlikeTxID)
+// // CreateUnlike creates an unlike transaction
+// func CreateUnlike(unlikeTxID string, utxos []*transaction.UTXO, changeAddress *script.Address, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
+// 	tx := transaction.NewTransaction()
+// 	s := &script.Script{}
+// 	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
+// 	_ = s.AppendPushDataString(bitcom.MapPrefix)
+// 	_ = s.AppendPushDataString("SET")
+// 	_ = s.AppendPushDataString("app")
+// 	_ = s.AppendPushDataString(AppName)
+// 	_ = s.AppendPushDataString("type")
+// 	_ = s.AppendPushDataString(string(TypeUnlike))
+// 	_ = s.AppendPushDataString("context")
+// 	_ = s.AppendPushDataString(string(ContextTx))
+// 	_ = s.AppendPushDataString(string(ContextTx))
+// 	_ = s.AppendPushDataString(unlikeTxID)
 
-	// Add AIP signature
-	if identityKey != nil {
-		_ = s.AppendPushDataString("|")
-		_ = s.AppendPushDataString(bitcom.AIPPrefix)
-		_ = s.AppendPushDataString("BITCOIN_ECDSA")
+// 	// Add AIP signature
+// 	if identityKey != nil {
+// 		_ = s.AppendPushDataString("|")
+// 		_ = s.AppendPushDataString(bitcom.AIPPrefix)
+// 		_ = s.AppendPushDataString("BITCOIN_ECDSA")
 
-		// make a string from the script
-		data := s.String()
-		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
-		if err != nil {
-			return nil, err
-		}
-		_ = s.AppendPushDataString(sig.Signature)
-	}
+// 		// make a string from the script
+// 		data := s.String()
+// 		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		_ = s.AppendPushDataString(sig.Signature)
+// 	}
 
-	tx.AddOutput(&transaction.TransactionOutput{
-		LockingScript: s,
-		Satoshis:      0,
-	})
+// 	tx.AddOutput(&transaction.TransactionOutput{
+// 		LockingScript: s,
+// 		Satoshis:      0,
+// 	})
 
-	// Add change output if changeAddress is provided
-	if changeAddress != nil {
-		changeScript, err := p2pkh.Lock(changeAddress)
-		if err != nil {
-			return nil, err
-		}
-		tx.AddOutput(&transaction.TransactionOutput{
-			LockingScript: changeScript,
-			Change:        true,
-		})
-	}
+// 	// Add change output if changeAddress is provided
+// 	if changeAddress != nil {
+// 		changeScript, err := p2pkh.Lock(changeAddress)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		tx.AddOutput(&transaction.TransactionOutput{
+// 			LockingScript: changeScript,
+// 			Change:        true,
+// 		})
+// 	}
 
-	return tx, nil
-}
+// 	return tx, nil
+// }
 
-// CreateFollow creates a follow transaction
-func CreateFollow(followBapID string, utxos []*transaction.UTXO, changeAddress *script.Address, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
-	tx := transaction.NewTransaction()
-	s := &script.Script{}
-	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
-	_ = s.AppendPushDataString(bitcom.MapPrefix)
-	_ = s.AppendPushDataString("SET")
-	_ = s.AppendPushDataString("app")
-	_ = s.AppendPushDataString(AppName)
-	_ = s.AppendPushDataString("type")
-	_ = s.AppendPushDataString(string(TypeFollow))
-	_ = s.AppendPushDataString("context")
-	_ = s.AppendPushDataString(string(ContextBapID))
-	_ = s.AppendPushDataString(string(ContextBapID))
-	_ = s.AppendPushDataString(followBapID)
+// // CreateFollow creates a follow transaction
+// func CreateFollow(followBapID string, utxos []*transaction.UTXO, changeAddress *script.Address, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
+// 	tx := transaction.NewTransaction()
+// 	s := &script.Script{}
+// 	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
+// 	_ = s.AppendPushDataString(bitcom.MapPrefix)
+// 	_ = s.AppendPushDataString("SET")
+// 	_ = s.AppendPushDataString("app")
+// 	_ = s.AppendPushDataString(AppName)
+// 	_ = s.AppendPushDataString("type")
+// 	_ = s.AppendPushDataString(string(TypeFollow))
+// 	_ = s.AppendPushDataString("context")
+// 	_ = s.AppendPushDataString(string(ContextBapID))
+// 	_ = s.AppendPushDataString(string(ContextBapID))
+// 	_ = s.AppendPushDataString(followBapID)
 
-	// Add AIP signature
-	if identityKey != nil {
-		_ = s.AppendPushDataString("|")
-		_ = s.AppendPushDataString(bitcom.AIPPrefix)
-		_ = s.AppendPushDataString("BITCOIN_ECDSA")
+// 	// Add AIP signature
+// 	if identityKey != nil {
+// 		_ = s.AppendPushDataString("|")
+// 		_ = s.AppendPushDataString(bitcom.AIPPrefix)
+// 		_ = s.AppendPushDataString("BITCOIN_ECDSA")
 
-		// make a string from the script
-		data := s.String()
-		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
-		if err != nil {
-			return nil, err
-		}
-		_ = s.AppendPushDataString(sig.Signature)
-	}
+// 		// make a string from the script
+// 		data := s.String()
+// 		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		_ = s.AppendPushDataString(sig.Signature)
+// 	}
 
-	// Add action output
-	tx.AddOutput(&transaction.TransactionOutput{
-		LockingScript: s,
-		Satoshis:      0,
-	})
+// 	// Add action output
+// 	tx.AddOutput(&transaction.TransactionOutput{
+// 		LockingScript: s,
+// 		Satoshis:      0,
+// 	})
 
-	// Add change output if changeAddress is provided
-	if changeAddress != nil {
-		changeScript, err := p2pkh.Lock(changeAddress)
-		if err != nil {
-			return nil, err
-		}
-		tx.AddOutput(&transaction.TransactionOutput{
-			LockingScript: changeScript,
-			Change:        true,
-		})
-	}
+// 	// Add change output if changeAddress is provided
+// 	if changeAddress != nil {
+// 		changeScript, err := p2pkh.Lock(changeAddress)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		tx.AddOutput(&transaction.TransactionOutput{
+// 			LockingScript: changeScript,
+// 			Change:        true,
+// 		})
+// 	}
 
-	return tx, nil
-}
+// 	return tx, nil
+// }
 
-// CreateUnfollow creates an unfollow transaction
-func CreateUnfollow(unfollowBapID string, utxos []*transaction.UTXO, changeAddress *script.Address, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
-	tx := transaction.NewTransaction()
-	s := &script.Script{}
-	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
-	_ = s.AppendPushDataString(bitcom.MapPrefix)
-	_ = s.AppendPushDataString("SET")
-	_ = s.AppendPushDataString("app")
-	_ = s.AppendPushDataString(AppName)
-	_ = s.AppendPushDataString("type")
-	_ = s.AppendPushDataString(string(TypeUnfollow))
-	_ = s.AppendPushDataString("context")
-	_ = s.AppendPushDataString(string(ContextBapID))
-	_ = s.AppendPushDataString(string(ContextBapID))
-	_ = s.AppendPushDataString(unfollowBapID)
+// // CreateUnfollow creates an unfollow transaction
+// func CreateUnfollow(unfollowBapID string, utxos []*transaction.UTXO, changeAddress *script.Address, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
+// 	tx := transaction.NewTransaction()
+// 	s := &script.Script{}
+// 	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
+// 	_ = s.AppendPushDataString(bitcom.MapPrefix)
+// 	_ = s.AppendPushDataString("SET")
+// 	_ = s.AppendPushDataString("app")
+// 	_ = s.AppendPushDataString(AppName)
+// 	_ = s.AppendPushDataString("type")
+// 	_ = s.AppendPushDataString(string(TypeUnfollow))
+// 	_ = s.AppendPushDataString("context")
+// 	_ = s.AppendPushDataString(string(ContextBapID))
+// 	_ = s.AppendPushDataString(string(ContextBapID))
+// 	_ = s.AppendPushDataString(unfollowBapID)
 
-	// Add AIP signature
-	if identityKey != nil {
-		_ = s.AppendPushDataString("|")
-		_ = s.AppendPushDataString(bitcom.AIPPrefix)
-		_ = s.AppendPushDataString("BITCOIN_ECDSA")
+// 	// Add AIP signature
+// 	if identityKey != nil {
+// 		_ = s.AppendPushDataString("|")
+// 		_ = s.AppendPushDataString(bitcom.AIPPrefix)
+// 		_ = s.AppendPushDataString("BITCOIN_ECDSA")
 
-		// make a string from the script
-		data := s.String()
-		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
-		if err != nil {
-			return nil, err
-		}
-		_ = s.AppendPushDataString(sig.Signature)
-	}
+// 		// make a string from the script
+// 		data := s.String()
+// 		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		_ = s.AppendPushDataString(sig.Signature)
+// 	}
 
-	tx.AddOutput(&transaction.TransactionOutput{
-		LockingScript: s,
-		Satoshis:      0,
-	})
+// 	tx.AddOutput(&transaction.TransactionOutput{
+// 		LockingScript: s,
+// 		Satoshis:      0,
+// 	})
 
-	// Add change output if changeAddress is provided
-	if changeAddress != nil {
-		changeScript, err := p2pkh.Lock(changeAddress)
-		if err != nil {
-			return nil, err
-		}
-		tx.AddOutput(&transaction.TransactionOutput{
-			LockingScript: changeScript,
-			Change:        true,
-		})
-	}
+// 	// Add change output if changeAddress is provided
+// 	if changeAddress != nil {
+// 		changeScript, err := p2pkh.Lock(changeAddress)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		tx.AddOutput(&transaction.TransactionOutput{
+// 			LockingScript: changeScript,
+// 			Change:        true,
+// 		})
+// 	}
 
-	return tx, nil
-}
+// 	return tx, nil
+// }
 
-// CreateMessage creates a new message transaction
-func CreateMessage(message Message, utxos []*transaction.UTXO, changeAddress *script.Address, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
-	tx := transaction.NewTransaction()
+// // CreateMessage creates a new message transaction
+// func CreateMessage(message Message, utxos []*transaction.UTXO, changeAddress *script.Address, identityKey *ec.PrivateKey) (*transaction.Transaction, error) {
+// 	tx := transaction.NewTransaction()
 
-	// Create B protocol output first
-	s := &script.Script{}
-	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
-	_ = s.AppendPushDataString(bitcom.BPrefix)
-	_ = s.AppendPushData(message.B.Data)
-	_ = s.AppendPushDataString(string(message.B.MediaType))
-	_ = s.AppendPushDataString(string(message.B.Encoding))
-	if message.B.Filename != "" {
-		_ = s.AppendPushDataString(message.B.Filename)
-	}
+// 	// Create B protocol output first
+// 	s := &script.Script{}
+// 	_ = s.AppendOpcodes(script.OpFALSE, script.OpRETURN)
+// 	_ = s.AppendPushDataString(bitcom.BPrefix)
+// 	_ = s.AppendPushData(message.B.Data)
+// 	_ = s.AppendPushDataString(string(message.B.MediaType))
+// 	_ = s.AppendPushDataString(string(message.B.Encoding))
+// 	if message.B.Filename != "" {
+// 		_ = s.AppendPushDataString(message.B.Filename)
+// 	}
 
-	tx.AddOutput(&transaction.TransactionOutput{
-		LockingScript: s,
-		Satoshis:      0,
-	})
+// 	tx.AddOutput(&transaction.TransactionOutput{
+// 		LockingScript: s,
+// 		Satoshis:      0,
+// 	})
 
-	// Create MAP protocol output
-	mapScript := &script.Script{}
-	_ = mapScript.AppendOpcodes(script.OpFALSE, script.OpRETURN)
-	_ = mapScript.AppendPushDataString(bitcom.MapPrefix)
-	_ = mapScript.AppendPushDataString("SET")
-	_ = mapScript.AppendPushDataString("app")
-	_ = mapScript.AppendPushDataString(AppName)
-	_ = mapScript.AppendPushDataString("type")
-	_ = mapScript.AppendPushDataString(string(TypeMessage))
+// 	// Create MAP protocol output
+// 	mapScript := &script.Script{}
+// 	_ = mapScript.AppendOpcodes(script.OpFALSE, script.OpRETURN)
+// 	_ = mapScript.AppendPushDataString(bitcom.MapPrefix)
+// 	_ = mapScript.AppendPushDataString("SET")
+// 	_ = mapScript.AppendPushDataString("app")
+// 	_ = mapScript.AppendPushDataString(AppName)
+// 	_ = mapScript.AppendPushDataString("type")
+// 	_ = mapScript.AppendPushDataString(string(TypeMessage))
 
-	// Add context if provided
-	if message.Context != "" {
-		_ = mapScript.AppendPushDataString("context")
-		_ = mapScript.AppendPushDataString(string(message.Context))
-		_ = mapScript.AppendPushDataString(string(message.Context))
-		_ = mapScript.AppendPushDataString(message.ContextValue)
-	}
+// 	// Add context if provided
+// 	if message.Context != "" {
+// 		_ = mapScript.AppendPushDataString("context")
+// 		_ = mapScript.AppendPushDataString(string(message.Context))
+// 		_ = mapScript.AppendPushDataString(string(message.Context))
+// 		_ = mapScript.AppendPushDataString(message.ContextValue)
+// 	}
 
-	// Add AIP signature
-	if identityKey != nil {
-		_ = mapScript.AppendPushDataString("|")
-		_ = mapScript.AppendPushDataString(bitcom.AIPPrefix)
-		_ = mapScript.AppendPushDataString("BITCOIN_ECDSA")
+// 	// Add AIP signature
+// 	if identityKey != nil {
+// 		_ = mapScript.AppendPushDataString("|")
+// 		_ = mapScript.AppendPushDataString(bitcom.AIPPrefix)
+// 		_ = mapScript.AppendPushDataString("BITCOIN_ECDSA")
 
-		// make a string from the mapScript
-		data := mapScript.String()
-		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
-		if err != nil {
-			return nil, err
-		}
-		_ = mapScript.AppendPushDataString(sig.Signature)
-	}
+// 		// make a string from the mapScript
+// 		data := mapScript.String()
+// 		sig, err := aip.Sign(identityKey, aip.BitcoinECDSA, data)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		_ = mapScript.AppendPushDataString(sig.Signature)
+// 	}
 
-	tx.AddOutput(&transaction.TransactionOutput{
-		LockingScript: mapScript,
-		Satoshis:      0,
-	})
+// 	tx.AddOutput(&transaction.TransactionOutput{
+// 		LockingScript: mapScript,
+// 		Satoshis:      0,
+// 	})
 
-	// Add change output if changeAddress is provided
-	if changeAddress != nil {
-		changeScript, err := p2pkh.Lock(changeAddress)
-		if err != nil {
-			return nil, err
-		}
-		tx.AddOutput(&transaction.TransactionOutput{
-			LockingScript: changeScript,
-			Change:        true,
-		})
-	}
+// 	// Add change output if changeAddress is provided
+// 	if changeAddress != nil {
+// 		changeScript, err := p2pkh.Lock(changeAddress)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		tx.AddOutput(&transaction.TransactionOutput{
+// 			LockingScript: changeScript,
+// 			Change:        true,
+// 		})
+// 	}
 
-	return tx, nil
-}
+// 	return tx, nil
+// }
 
-// processTags handles different tag formats and adds them to the BSocial object
-func processTags(bsocial *BSocial, tagsField any) {
-	// Handle string
-	if tagStr, ok := tagsField.(string); ok {
-		bsocial.Tags = append(bsocial.Tags, []string{tagStr})
-		return
-	}
+// // processTags handles different tag formats and adds them to the BSocial object
+// func processTags(bsocial *BSocial, tagsField any) {
+// 	// Handle string
+// 	if tagStr, ok := tagsField.(string); ok {
+// 		bsocial.Tags = append(bsocial.Tags, []string{tagStr})
+// 		return
+// 	}
 
-	// Handle []string
-	if tagSlice, ok := tagsField.([]string); ok {
-		bsocial.Tags = append(bsocial.Tags, tagSlice)
-		return
-	}
+// 	// Handle []string
+// 	if tagSlice, ok := tagsField.([]string); ok {
+// 		bsocial.Tags = append(bsocial.Tags, tagSlice)
+// 		return
+// 	}
 
-	// Handle []any
-	if tagIface, ok := tagsField.([]any); ok {
-		var parsedTags []string
-		for _, t := range tagIface {
-			if ts, ok := t.(string); ok {
-				parsedTags = append(parsedTags, ts)
-			}
-		}
-		if len(parsedTags) > 0 {
-			bsocial.Tags = append(bsocial.Tags, parsedTags)
-		}
-	}
-}
+// 	// Handle []any
+// 	if tagIface, ok := tagsField.([]any); ok {
+// 		var parsedTags []string
+// 		for _, t := range tagIface {
+// 			if ts, ok := t.(string); ok {
+// 				parsedTags = append(parsedTags, ts)
+// 			}
+// 		}
+// 		if len(parsedTags) > 0 {
+// 			bsocial.Tags = append(bsocial.Tags, parsedTags)
+// 		}
+// 	}
+// }
