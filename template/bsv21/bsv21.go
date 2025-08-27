@@ -7,6 +7,7 @@ import (
 
 	"github.com/bitcoin-sv/go-templates/template/inscription"
 	"github.com/bsv-blockchain/go-sdk/script"
+	"github.com/bsv-blockchain/go-sdk/transaction"
 )
 
 type Op string
@@ -75,6 +76,10 @@ func Decode(scr *script.Script) *Bsv21 {
 			if id, ok := data["id"]; !ok {
 				return nil
 			} else {
+				// Validate that the id is a properly formatted outpoint for transfers/burns
+				if _, err := transaction.OutpointFromString(id); err != nil {
+					return nil // Invalid outpoint format, not a valid BSV21 token
+				}
 				bsv21.Id = id
 			}
 		default:
