@@ -30,7 +30,7 @@ type Bsv21 struct {
 
 func Decode(scr *script.Script) *Bsv21 {
 	insc := inscription.Decode(scr)
-	data := map[string]string{}
+	data := map[string]any{}
 	if insc == nil {
 		return nil
 	} else if insc.File.Type != "application/bsv-20" {
@@ -44,20 +44,20 @@ func Decode(scr *script.Script) *Bsv21 {
 			Insc: insc,
 		}
 		if op, ok := data["op"]; ok {
-			bsv21.Op = strings.ToLower(op)
+			bsv21.Op = strings.ToLower(op.(string))
 		} else {
 			return nil
 		}
 
 		if amt, ok := data["amt"]; ok {
-			if bsv21.Amt, err = strconv.ParseUint(amt, 10, 64); err != nil {
+			if bsv21.Amt, err = strconv.ParseUint(amt.(string), 10, 64); err != nil {
 				return nil
 			}
 		}
 
 		if dec, ok := data["dec"]; ok {
 			var val uint64
-			if val, err = strconv.ParseUint(dec, 10, 8); err != nil || val > 18 {
+			if val, err = strconv.ParseUint(dec.(string), 10, 8); err != nil || val > 18 {
 				return nil
 			}
 			decimals := uint8(val)
@@ -67,20 +67,22 @@ func Decode(scr *script.Script) *Bsv21 {
 		switch bsv21.Op {
 		case string(OpMint):
 			if sym, ok := data["sym"]; ok {
-				bsv21.Symbol = &sym
+				s := sym.(string)
+				bsv21.Symbol = &s
 			}
 			if icon, ok := data["icon"]; ok {
-				bsv21.Icon = &icon
+				i := icon.(string)
+				bsv21.Icon = &i
 			}
 		case string(OpTransfer), string(OpBurn):
 			if id, ok := data["id"]; !ok {
 				return nil
 			} else {
 				// Validate that the id is a properly formatted outpoint for transfers/burns
-				if _, err := transaction.OutpointFromString(id); err != nil {
+				if _, err := transaction.OutpointFromString(id.(string)); err != nil {
 					return nil // Invalid outpoint format, not a valid BSV21 token
 				}
-				bsv21.Id = id
+				bsv21.Id = id.(string)
 			}
 		default:
 			return nil
