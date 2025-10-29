@@ -19,6 +19,7 @@ type File struct {
 type Inscription struct {
 	File         File                  `json:"file,omitempty"`
 	Parent       *transaction.Outpoint `json:"parent,omitempty"`
+	Fields       map[string][]byte     `json:"fields,omitempty"`
 	ScriptPrefix []byte                `json:"prefix,omitempty"`
 	ScriptSuffix []byte                `json:"suffix,omitempty"`
 }
@@ -31,6 +32,7 @@ func Decode(scr *script.Script) *Inscription {
 		} else if pos >= 2 && op.Op == script.OpDATA3 && bytes.Equal(op.Data, []byte("ord")) && (*scr)[startI-2] == 0 && (*scr)[startI-1] == script.OpIF {
 			insc := &Inscription{
 				ScriptPrefix: (*scr)[:startI-2],
+				Fields:       make(map[string][]byte),
 			}
 
 		ordLoop:
@@ -47,6 +49,7 @@ func Decode(scr *script.Script) *Inscription {
 				} else if len(op.Data) == 1 {
 					field = int(op.Data[0])
 				} else if len(op.Data) > 1 {
+					insc.Fields[string(op.Data)] = op2.Data
 					continue
 				}
 				switch field {

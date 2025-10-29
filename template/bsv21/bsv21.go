@@ -50,14 +50,22 @@ func Decode(scr *script.Script) *Bsv21 {
 		}
 
 		if amt, ok := data["amt"]; ok {
-			if bsv21.Amt, err = strconv.ParseUint(amt.(string), 10, 64); err != nil {
+			amtStr, ok := amt.(string)
+			if !ok {
+				return nil
+			}
+			if bsv21.Amt, err = strconv.ParseUint(amtStr, 10, 64); err != nil {
 				return nil
 			}
 		}
 
 		if dec, ok := data["dec"]; ok {
+			decStr, ok := dec.(string)
+			if !ok {
+				return nil
+			}
 			var val uint64
-			if val, err = strconv.ParseUint(dec.(string), 10, 8); err != nil || val > 18 {
+			if val, err = strconv.ParseUint(decStr, 10, 8); err != nil || val > 18 {
 				return nil
 			}
 			decimals := uint8(val)
