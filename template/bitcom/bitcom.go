@@ -79,7 +79,9 @@ func findReturn(scr *script.Script, from int) int {
 		i := from
 		for i < len(*scr) {
 			startPos := i
-			if op, err := scr.ReadOp(&i); err == nil && op.Op == script.OpRETURN {
+			if op, err := scr.ReadOp(&i); err != nil {
+				break
+			} else if op.Op == script.OpRETURN {
 				return startPos
 			}
 		}
