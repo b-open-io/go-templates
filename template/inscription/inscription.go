@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"unicode/utf8"
 
+	"github.com/bsv-blockchain/go-sdk/chainhash"
 	"github.com/bsv-blockchain/go-sdk/script"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 )
@@ -66,6 +67,10 @@ func Decode(scr *script.Script) *Inscription {
 				case 3:
 					if len(op2.Data) == 36 {
 						insc.Parent = transaction.NewOutpointFromBytes([36]byte(op2.Data))
+					} else if len(op2.Data) == 32 {
+						if txid, err := chainhash.NewHash(op2.Data); err == nil {
+							insc.Parent = &transaction.Outpoint{Txid: *txid, Index: 0}
+						}
 					}
 				}
 
