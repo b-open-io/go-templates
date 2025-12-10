@@ -13,9 +13,12 @@ import (
 type Op string
 
 var (
-	OpMint     Op = "deploy+mint"
-	OpTransfer Op = "transfer"
-	OpBurn     Op = "burn"
+	OpDeployMint Op = "deploy+mint"
+	OpDeployAuth Op = "deploy+auth"
+	OpMint       Op = "mint"
+	OpAuth       Op = "auth"
+	OpTransfer   Op = "transfer"
+	OpBurn       Op = "burn"
 )
 
 type Bsv21 struct {
@@ -49,14 +52,20 @@ func Decode(scr *script.Script) *Bsv21 {
 			return nil
 		}
 
-		if amt, ok := data["amt"]; ok {
-			amtStr, ok := amt.(string)
-			if !ok {
+		switch bsv21.Op {
+		case string(OpAuth), string(OpDeployAuth):
+			if _, ok := data["amt"]; ok {
 				return nil
 			}
-			if bsv21.Amt, err = strconv.ParseUint(amtStr, 10, 64); err != nil {
+		default:
+			if amt, ok := data["amt"]; !ok {
+				return nil
+			} else if amtStr, ok := amt.(string); !ok {
+				return nil
+			} else if bsv21.Amt, err = strconv.ParseUint(amtStr, 10, 64); err != nil {
 				return nil
 			}
+
 		}
 
 		if dec, ok := data["dec"]; ok {
@@ -73,7 +82,7 @@ func Decode(scr *script.Script) *Bsv21 {
 		}
 
 		switch bsv21.Op {
-		case string(OpMint):
+		case string(OpDeployMint), string(OpDeployAuth):
 			if sym, ok := data["sym"]; ok {
 				s := sym.(string)
 				bsv21.Symbol = &s
@@ -82,11 +91,11 @@ func Decode(scr *script.Script) *Bsv21 {
 				i := icon.(string)
 				bsv21.Icon = &i
 			}
-		case string(OpTransfer), string(OpBurn):
+		case string(OpMint), string(OpAuth), string(OpTransfer), string(OpBurn):
 			if id, ok := data["id"]; !ok {
 				return nil
 			} else {
-				// Validate that the id is a properly formatted outpoint for transfers/burns
+				// Validate that the id is a properly formatted outpoint
 				if _, err := transaction.OutpointFromString(id.(string)); err != nil {
 					return nil // Invalid outpoint format, not a valid BSV21 token
 				}
