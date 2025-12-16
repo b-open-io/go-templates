@@ -2,6 +2,8 @@ module github.com/bitcoin-sv/go-templates
 
 go 1.24.3
 
+replace github.com/bsv-blockchain/go-sdk => ../go-sdk
+
 require (
 	github.com/bitcoinschema/go-sigma v0.1.2
 	github.com/bsv-blockchain/go-sdk v1.2.0
