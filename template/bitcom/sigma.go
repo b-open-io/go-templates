@@ -56,13 +56,7 @@ func DecodeSIGMA(b *Bitcom) []*Sigma {
 		return signatures
 	}
 
-	for i, proto := range b.Protocols {
-		// Debug
-		fmt.Printf("Protocol %d: %q, Script length: %d\n", i, proto.Protocol, len(proto.Script))
-		fmt.Printf("SIGMAPrefix: %q\n", SIGMAPrefix)
-		fmt.Printf("proto.Protocol == SIGMAPrefix: %v\n", proto.Protocol == SIGMAPrefix)
-		fmt.Printf("Script hex: %x\n", proto.Script)
-
+	for _, proto := range b.Protocols {
 		// Check for SIGMA prefix
 		if proto.Protocol == SIGMAPrefix {
 			pos := 0 // Start from beginning of script
@@ -70,12 +64,8 @@ func DecodeSIGMA(b *Bitcom) []*Sigma {
 
 			sigma := &Sigma{}
 
-			// Debug
-			fmt.Printf("Reading data from script...\n")
-
 			// Read ALGORITHM - handle the case where it's prefixed with length
 			if op, err := scr.ReadOp(&pos); err != nil {
-				fmt.Printf("Error reading algorithm: %v\n", err)
 				continue
 			} else {
 				// The algorithm field is prefixed with its length (03) for "BSM"
@@ -84,12 +74,10 @@ func DecodeSIGMA(b *Bitcom) []*Sigma {
 				} else {
 					sigma.Algorithm = SignatureAlgorithm(string(op.Data))
 				}
-				fmt.Printf("Algorithm: %q\n", sigma.Algorithm)
 			}
 
 			// Read SIGNER ADDRESS - handle the case where it's prefixed with quotes
 			if op, err := scr.ReadOp(&pos); err != nil {
-				fmt.Printf("Error reading signer address: %v\n", err)
 				continue
 			} else {
 				if len(op.Data) > 1 && op.Data[0] == '"' {
@@ -98,17 +86,14 @@ func DecodeSIGMA(b *Bitcom) []*Sigma {
 				} else {
 					sigma.SignerAddress = string(op.Data)
 				}
-				fmt.Printf("SignerAddress: %q\n", sigma.SignerAddress)
 			}
 
 			// Read SIGNATURE VALUE
 			if op, err := scr.ReadOp(&pos); err != nil {
-				fmt.Printf("Error reading signature value: %v\n", err)
 				continue
 			} else {
 				// Base64 encode the signature value
 				sigma.SignatureValue = base64.StdEncoding.EncodeToString(op.Data)
-				fmt.Printf("SignatureValue: %s\n", sigma.SignatureValue)
 			}
 
 			// Try to read optional fields
@@ -116,16 +101,13 @@ func DecodeSIGMA(b *Bitcom) []*Sigma {
 				// Check if this is VIN field (numeric value)
 				if len(op.Data) == 1 && op.Data[0] >= '0' && op.Data[0] <= '9' {
 					sigma.VIN = int(op.Data[0] - '0')
-					fmt.Printf("VIN: %d\n", sigma.VIN)
 				} else {
 					// This is probably a message field
 					sigma.Message = string(op.Data)
-					fmt.Printf("Message: %q\n", sigma.Message)
 
 					// Try to read nonce if it exists
 					if op, err := scr.ReadOp(&pos); err == nil {
 						sigma.Nonce = string(op.Data)
-						fmt.Printf("Nonce: %q\n", sigma.Nonce)
 					}
 				}
 			}
@@ -134,25 +116,19 @@ func DecodeSIGMA(b *Bitcom) []*Sigma {
 			if sigma.SignerAddress != "" && sigma.SignatureValue != "" {
 				// For signatures with explicit message field
 				if sigma.Message != "" {
-					if err := sigma.VerifyMessageSignature(); err != nil {
-						fmt.Printf("Failed to verify message signature: %v\n", err)
-					}
+					_ = sigma.VerifyMessageSignature()
 				} else if sigma.Transaction != nil {
 					// For transaction signatures, we need to derive the message from transaction data
-					if err := sigma.VerifyTransactionSignature(); err != nil {
-						fmt.Printf("Failed to verify transaction signature: %v\n", err)
-					}
+					_ = sigma.VerifyTransactionSignature()
 				} else {
 					// For now, just trust signatures without enough context to verify
 					sigma.Valid = true
 				}
 			}
 
-			fmt.Printf("Adding sigma to result\n")
 			signatures = append(signatures, sigma)
 		}
 	}
-	fmt.Printf("Returning %d signatures\n", len(signatures))
 	return signatures
 }
 
@@ -418,9 +394,7 @@ func DecodeFromTransaction(tx *transaction.Transaction) []*Sigma {
 			sigma.SigmaInstance = instanceIdx
 
 			// Verify with transaction context
-			if err := sigma.VerifyTransactionSignature(); err != nil {
-				fmt.Printf("Failed to verify transaction signature: %v\n", err)
-			}
+			_ = sigma.VerifyTransactionSignature()
 		}
 
 		allSignatures = append(allSignatures, signatures...)
