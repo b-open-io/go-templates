@@ -25,9 +25,9 @@ type Bsv21 struct {
 	Id       string                   `json:"id,omitempty"`
 	Op       string                   `json:"op"`
 	Symbol   *string                  `json:"sym,omitempty"`
-	Decimals *uint8                   `json:"dec,omitempty"`
+	Decimals *uint8                   `json:"dec,omitempty,string"`
 	Icon     *string                  `json:"icon,omitempty"`
-	Amt      uint64                   `json:"amt"`
+	Amt      uint64                   `json:"amt,string"`
 	Insc     *inscription.Inscription `json:"-"`
 }
 
