@@ -3,6 +3,7 @@ package shrug
 import (
 	"math/big"
 
+	"github.com/bitcoin-sv/go-templates/template/inscription"
 	"github.com/bsv-blockchain/go-sdk/script"
 	"github.com/bsv-blockchain/go-sdk/script/interpreter"
 	"github.com/bsv-blockchain/go-sdk/transaction"
@@ -14,6 +15,8 @@ type Shrug struct {
 	Id           *transaction.Outpoint // nil = deploy; the token id is this output's outpoint
 	Amount       *big.Int              // 0 = mint authority, >0 = token value; arbitrary precision
 	ScriptSuffix []byte
+	Insc         *inscription.Inscription // inscription found in the suffix, if any
+	Metadata     *Metadata                // populated when Insc carries application/shrug+cbor
 }
 
 func Decode(s *script.Script) *Shrug {
@@ -53,6 +56,15 @@ func Decode(s *script.Script) *Shrug {
 	}
 
 	shrug.ScriptSuffix = (*s)[pos:]
+
+	if insc := inscription.Decode(script.NewFromBytes(shrug.ScriptSuffix)); insc != nil {
+		shrug.Insc = insc
+		if insc.File.Type == MetadataContentType {
+			// Malformed metadata does not invalidate the token output.
+			shrug.Metadata, _ = DecodeMetadata(insc.File.Content)
+		}
+	}
+
 	return shrug
 }
 

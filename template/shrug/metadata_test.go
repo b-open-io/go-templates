@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bitcoin-sv/go-templates/template/inscription"
 	"github.com/stretchr/testify/require"
 )
 
@@ -58,6 +59,43 @@ func TestMetadata_UnknownKeysIgnored(t *testing.T) {
 	decoded, err := DecodeMetadata(data)
 	require.NoError(t, err)
 	require.Equal(t, uint8(2), *decoded.Decimals)
+}
+
+func TestDecode_PopulatesMetadataFromInscription(t *testing.T) {
+	sym := "GOLD"
+	dec := uint8(8)
+	meta := &Metadata{Symbol: &sym, Icon: testOutpoint(t), Decimals: &dec}
+	content, err := meta.Encode()
+	require.NoError(t, err)
+
+	envelope, err := (&inscription.Inscription{
+		File: inscription.File{Type: MetadataContentType, Content: content},
+	}).Lock()
+	require.NoError(t, err)
+
+	// deploy output: prefix + metadata inscription + P2PKH
+	in := &Shrug{ScriptSuffix: append(*envelope, testSuffix()...)}
+	decoded := Decode(in.Lock())
+	require.NotNil(t, decoded)
+	require.NotNil(t, decoded.Insc)
+	require.NotNil(t, decoded.Metadata)
+	require.Equal(t, sym, *decoded.Metadata.Symbol)
+	require.Equal(t, dec, *decoded.Metadata.Decimals)
+	require.Equal(t, testOutpoint(t).Bytes(), decoded.Metadata.Icon.Bytes())
+}
+
+func TestDecode_NonMetadataInscription(t *testing.T) {
+	envelope, err := (&inscription.Inscription{
+		File: inscription.File{Type: "text/plain", Content: []byte("hello")},
+	}).Lock()
+	require.NoError(t, err)
+
+	in := &Shrug{ScriptSuffix: append(*envelope, testSuffix()...)}
+	decoded := Decode(in.Lock())
+	require.NotNil(t, decoded)
+	require.NotNil(t, decoded.Insc)
+	require.Equal(t, "text/plain", decoded.Insc.File.Type)
+	require.Nil(t, decoded.Metadata)
 }
 
 func TestMetadata_Invalid(t *testing.T) {
