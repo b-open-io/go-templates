@@ -12,7 +12,7 @@ const SHRUG_TAG = "¯\\_(ツ)_/¯"
 
 type Shrug struct {
 	Id           *transaction.Outpoint // nil = deploy; the token id is this output's outpoint
-	Amount       uint64                // 0 = mint authority, >0 = token value
+	Amount       *big.Int              // 0 = mint authority, >0 = token value; arbitrary precision
 	ScriptSuffix []byte
 }
 
@@ -42,10 +42,10 @@ func Decode(s *script.Script) *Shrug {
 		return nil
 	} else if number, err := interpreter.MakeScriptNumber(op.Data, len(op.Data), true, true); err != nil {
 		return nil
-	} else if number.Val.Sign() < 0 || number.Val.BitLen() > 64 {
+	} else if number.Val.Sign() < 0 {
 		return nil
 	} else {
-		shrug.Amount = number.Val.Uint64()
+		shrug.Amount = number.Val
 	}
 
 	if op, err := s.ReadOp(&pos); err != nil || op.Op != script.OpDROP {
@@ -65,9 +65,9 @@ func (i *Shrug) Lock() *script.Script {
 		_ = s.AppendOpcodes(script.Op0)
 	}
 	_ = s.AppendOpcodes(script.Op2DROP)
-	if i.Amount > 0 {
+	if i.Amount != nil && i.Amount.Sign() > 0 {
 		_ = s.AppendPushData((&interpreter.ScriptNumber{
-			Val:          new(big.Int).SetUint64(i.Amount),
+			Val:          i.Amount,
 			AfterGenesis: true,
 		}).Bytes())
 	} else {

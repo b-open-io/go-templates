@@ -3,6 +3,7 @@ package shrug
 import (
 	"bytes"
 	"math"
+	"math/big"
 	"testing"
 
 	"github.com/bsv-blockchain/go-sdk/script"
@@ -34,19 +35,27 @@ func TestLockAndDecode_RoundTrip(t *testing.T) {
 		name string
 		in   *Shrug
 	}{
-		{"deploy with supply", &Shrug{Amount: 21_000_000, ScriptSuffix: suffix}},
+		{"deploy with supply", &Shrug{Amount: big.NewInt(21_000_000), ScriptSuffix: suffix}},
 		{"deploy authority", &Shrug{ScriptSuffix: suffix}},
 		{"authority", &Shrug{Id: outpoint, ScriptSuffix: suffix}},
-		{"value", &Shrug{Id: outpoint, Amount: 5000, ScriptSuffix: suffix}},
-		{"amount 1", &Shrug{Id: outpoint, Amount: 1, ScriptSuffix: suffix}},
-		{"max amount", &Shrug{Id: outpoint, Amount: math.MaxUint64, ScriptSuffix: suffix}},
+		{"value", &Shrug{Id: outpoint, Amount: big.NewInt(5000), ScriptSuffix: suffix}},
+		{"amount 1", &Shrug{Id: outpoint, Amount: big.NewInt(1), ScriptSuffix: suffix}},
+		{"max uint64", &Shrug{Id: outpoint, Amount: new(big.Int).SetUint64(math.MaxUint64), ScriptSuffix: suffix}},
+		{"beyond uint64", &Shrug{Id: outpoint, Amount: new(big.Int).Lsh(big.NewInt(1), 128), ScriptSuffix: suffix}},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			decoded := Decode(tc.in.Lock())
 			require.NotNil(t, decoded)
-			require.Equal(t, tc.in.Amount, decoded.Amount)
+
+			expected := tc.in.Amount
+			if expected == nil {
+				expected = big.NewInt(0)
+			}
+			require.NotNil(t, decoded.Amount)
+			require.Zero(t, expected.Cmp(decoded.Amount))
+
 			if tc.in.Id == nil {
 				require.Nil(t, decoded.Id)
 			} else {
@@ -113,16 +122,6 @@ func TestDecode_InvalidScripts(t *testing.T) {
 		require.Nil(t, Decode(s))
 	})
 
-	t.Run("amount exceeds uint64", func(t *testing.T) {
-		s := &script.Script{}
-		push(s, []byte(SHRUG_TAG))
-		push(s, outpoint.Bytes())
-		ops(s, script.Op2DROP)
-		push(s, []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01}) // 2^64
-		ops(s, script.OpDROP)
-		require.Nil(t, Decode(s))
-	})
-
 	t.Run("negative amount", func(t *testing.T) {
 		s := &script.Script{}
 		push(s, []byte(SHRUG_TAG))
@@ -142,7 +141,7 @@ func TestDecode_InvalidScripts(t *testing.T) {
 	})
 
 	t.Run("valid prefix with suffix intact", func(t *testing.T) {
-		in := &Shrug{Id: outpoint, Amount: 42, ScriptSuffix: suffix}
+		in := &Shrug{Id: outpoint, Amount: big.NewInt(42), ScriptSuffix: suffix}
 		decoded := Decode(in.Lock())
 		require.NotNil(t, decoded)
 		require.Equal(t, suffix, decoded.ScriptSuffix)
