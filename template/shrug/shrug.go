@@ -11,39 +11,47 @@ import (
 const SHRUG_TAG = "¯\\_(ツ)_/¯"
 
 type Shrug struct {
-	Id           *transaction.Outpoint
-	Amount       *big.Int
+	Id           *transaction.Outpoint // nil = deploy; the token id is this output's outpoint
+	Amount       uint64                // 0 = mint authority, >0 = token value
 	ScriptSuffix []byte
 }
 
 func Decode(s *script.Script) *Shrug {
 	shrug := &Shrug{}
 	pos := 0
-	if op, err := s.ReadOp(&pos); err != nil {
-		return nil
-	} else if len(op.Data) != 9 || string(op.Data[:8]) != SHRUG_TAG {
-		return nil
-	} else if op, err = s.ReadOp(&pos); err != nil {
-		return nil
-	} else if len(op.Data) == 36 {
-		shrug.Id = transaction.NewOutpointFromBytes(op.Data)
-	} else if op, err = s.ReadOp(&pos); err != nil {
-		return nil
-	} else if op.Op != script.Op2DROP {
-		return nil
-	} else if op, err = s.ReadOp(&pos); err != nil {
-		return nil
-	} else if number, err := interpreter.MakeScriptNumber(op.Data, len(op.Data), true, true); err != nil {
-		return nil
-	} else {
-		shrug.Amount = number.Val
-	}
 
 	if op, err := s.ReadOp(&pos); err != nil {
 		return nil
-	} else if op.Op != script.OpDROP {
+	} else if string(op.Data) != SHRUG_TAG {
 		return nil
 	}
+
+	if op, err := s.ReadOp(&pos); err != nil || op.Op > script.OpPUSHDATA4 {
+		return nil
+	} else if len(op.Data) == 36 {
+		shrug.Id = transaction.NewOutpointFromBytes(op.Data)
+	} else if len(op.Data) != 0 {
+		return nil
+	}
+
+	if op, err := s.ReadOp(&pos); err != nil || op.Op != script.Op2DROP {
+		return nil
+	}
+
+	if op, err := s.ReadOp(&pos); err != nil || op.Op > script.OpPUSHDATA4 {
+		return nil
+	} else if number, err := interpreter.MakeScriptNumber(op.Data, len(op.Data), true, true); err != nil {
+		return nil
+	} else if number.Val.Sign() < 0 || number.Val.BitLen() > 64 {
+		return nil
+	} else {
+		shrug.Amount = number.Val.Uint64()
+	}
+
+	if op, err := s.ReadOp(&pos); err != nil || op.Op != script.OpDROP {
+		return nil
+	}
+
 	shrug.ScriptSuffix = (*s)[pos:]
 	return shrug
 }
@@ -57,9 +65,9 @@ func (i *Shrug) Lock() *script.Script {
 		_ = s.AppendOpcodes(script.Op0)
 	}
 	_ = s.AppendOpcodes(script.Op2DROP)
-	if i.Amount != nil {
+	if i.Amount > 0 {
 		_ = s.AppendPushData((&interpreter.ScriptNumber{
-			Val:          i.Amount,
+			Val:          new(big.Int).SetUint64(i.Amount),
 			AfterGenesis: true,
 		}).Bytes())
 	} else {
