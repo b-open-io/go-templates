@@ -2,6 +2,7 @@ package shrug
 
 import (
 	"bytes"
+	"encoding/hex"
 	"math"
 	"math/big"
 	"testing"
@@ -146,4 +147,24 @@ func TestDecode_InvalidScripts(t *testing.T) {
 		require.NotNil(t, decoded)
 		require.Equal(t, suffix, decoded.ScriptSuffix)
 	})
+}
+
+// Golden prefix vector shared with the TypeScript implementation. The txid
+// bytes are asymmetric so byte-order mistakes cannot round-trip silently.
+func TestLock_GoldenPrefix(t *testing.T) {
+	b := make([]byte, 36)
+	for i := range 32 {
+		b[i] = byte(i)
+	}
+	b[32] = 0x01 // vout 1, little-endian
+	outpoint := transaction.NewOutpointFromBytes(b)
+	require.NotNil(t, outpoint)
+
+	in := &Shrug{Id: outpoint, Amount: big.NewInt(5000)}
+	expected := "0d" + "c2af5c5f28e38384295f2fc2af" + // push 13-byte tag
+		"24" + "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f" + "01000000" + // push 36-byte outpoint
+		"6d" + // OP_2DROP
+		"02" + "8813" + // push amount 5000 as script number (LE)
+		"75" // OP_DROP
+	require.Equal(t, expected, hex.EncodeToString(*in.Lock()))
 }
