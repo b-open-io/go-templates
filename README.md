@@ -19,7 +19,7 @@ The goal of this repository is to provide a place where developers from around t
 | [Cosign](./template/cosign/) | Co-signing transactions with multiple parties |
 | [Inscription](./template/inscription/) | On-chain NFT-like inscriptions |
 | [Lockup](./template/lockup/) | Time-locked transactions |
-| [OrdLock](./template/ordlock/) | Locking and unlocking functionality for ordinals |
+| [OrdLock](./template/ordlock/) | Decode, purchase, and cancel existing ordinal listings (create is off) |
 | [OrdP2PKH](./template/ordp2pkh/) | Ordinal-aware P2PKH transactions |
 | [P2PKH](./template/p2pkh/) | Standard Pay-to-Public-Key-Hash transactions |
 | [Shrug](./template/shrug/) | Experimental template for demo purposes |

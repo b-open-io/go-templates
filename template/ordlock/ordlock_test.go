@@ -2,13 +2,17 @@ package ordlock
 
 import (
 	"encoding/hex"
+	"errors"
 	"os"
 	"strings"
 	"testing"
 
+	ec "github.com/bsv-blockchain/go-sdk/primitives/ec"
 	"github.com/bsv-blockchain/go-sdk/script"
 	"github.com/bsv-blockchain/go-sdk/transaction"
 	"github.com/stretchr/testify/require"
+
+	"github.com/bitcoin-sv/go-templates/template/p2pkh"
 )
 
 func TestOrdLock(t *testing.T) {
@@ -222,4 +226,118 @@ func TestDecodeWithTestVector(t *testing.T) {
 			t.Logf("PayOut data starts with OP_RETURN as expected")
 		}
 	}
+}
+
+func TestListingCreateDisabled(t *testing.T) {
+	publicKeyHash, _ := hex.DecodeString("1234567890abcdef1234567890abcdef12345678")
+	seller, err := script.NewAddressFromPublicKeyHash(publicKeyHash, true)
+	require.NoError(t, err)
+
+	scr, err := Lock(seller, seller, 1000)
+	require.Nil(t, scr)
+	require.ErrorIs(t, err, ErrListingCreate)
+
+	scr, err = Create(seller, seller, 1000)
+	require.Nil(t, scr)
+	require.ErrorIs(t, err, ErrListingCreate)
+
+	listing := &OrdLock{Seller: seller, Price: 1000}
+	scr, err = listing.Lock()
+	require.Nil(t, scr)
+	require.ErrorIs(t, err, ErrListingCreate)
+	require.True(t, errors.Is(err, ErrListingCreate))
+}
+
+func TestIsOrdLockAndPurchase(t *testing.T) {
+	require.False(t, IsOrdLock(nil))
+	require.False(t, IsPurchase(nil))
+	require.False(t, IsOrdLock(script.NewFromBytes([]byte{})))
+	require.False(t, IsPurchase(script.NewFromBytes([]byte{script.Op1})))
+
+	publicKeyHash, _ := hex.DecodeString("1234567890abcdef1234567890abcdef12345678")
+	payoutOutput := &transaction.TransactionOutput{Satoshis: 5000}
+	payoutOutput.LockingScript = script.NewFromBytes([]byte{})
+
+	var scriptData []byte
+	scriptData = append(scriptData, OrdLockPrefix...)
+	scriptData = append(scriptData, 0x14)
+	scriptData = append(scriptData, publicKeyHash...)
+	outputBytes := payoutOutput.Bytes()
+	scriptData = append(scriptData, byte(len(outputBytes)))
+	scriptData = append(scriptData, outputBytes...)
+	scriptData = append(scriptData, OrdLockSuffix...)
+	lockScript := script.NewFromBytes(scriptData)
+
+	require.True(t, IsOrdLock(lockScript))
+	require.True(t, IsPurchase(lockScript))
+	require.NotNil(t, Decode(lockScript))
+}
+
+func testSpendTx(t *testing.T, lockScript *script.Script, satoshis uint64, outs int) *transaction.Transaction {
+	t.Helper()
+	tx := transaction.NewTransaction()
+	tx.Version = 1
+	require.NoError(t, tx.AddInputFrom(
+		"1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+		0,
+		hex.EncodeToString(*lockScript),
+		satoshis,
+		nil,
+	))
+	for i := 0; i < outs; i++ {
+		pkh := make([]byte, 20)
+		pkh[0] = byte(i + 1)
+		s, err := p2pkh.Lock(&script.Address{PublicKeyHash: pkh})
+		require.NoError(t, err)
+		tx.AddOutput(&transaction.TransactionOutput{
+			Satoshis:      1000,
+			LockingScript: s,
+		})
+	}
+	return tx
+}
+
+func TestCancelListing(t *testing.T) {
+	_, err := CancelListing(nil, nil)
+	require.ErrorIs(t, err, ErrNoPrivateKey)
+
+	key, err := ec.NewPrivateKey()
+	require.NoError(t, err)
+	addr, err := script.NewAddressFromPublicKey(key.PubKey(), true)
+	require.NoError(t, err)
+	lockScript, err := p2pkh.Lock(addr)
+	require.NoError(t, err)
+
+	tx := testSpendTx(t, lockScript, 100000, 1)
+	unlocker, err := CancelListing(key, nil)
+	require.NoError(t, err)
+	require.Equal(t, uint32(107), unlocker.EstimateLength(tx, 0))
+
+	unlock, err := unlocker.Sign(tx, 0)
+	require.NoError(t, err)
+	require.NotEmpty(t, *unlock)
+	require.Equal(t, byte(script.Op1), (*unlock)[len(*unlock)-1])
+	require.False(t, IsPurchase(unlock))
+}
+
+func TestPurchaseListing(t *testing.T) {
+	lockScript := script.NewFromBytes(append(append([]byte{}, OrdLockPrefix...), OrdLockSuffix...))
+	buy := PurchaseListing()
+
+	short := testSpendTx(t, lockScript, 1, 1)
+	_, err := buy.Sign(short, 0)
+	require.ErrorIs(t, err, ErrMalformedTx)
+	require.Equal(t, uint32(0), buy.EstimateLength(short, 0))
+
+	tx := testSpendTx(t, lockScript, 1, 2)
+	unlock, err := buy.Sign(tx, 0)
+	require.NoError(t, err)
+	require.NotEmpty(t, *unlock)
+	require.Equal(t, byte(script.Op0), (*unlock)[len(*unlock)-1])
+	require.Greater(t, buy.EstimateLength(tx, 0), uint32(0))
+
+	wide := testSpendTx(t, lockScript, 1, 3)
+	unlock, err = buy.Sign(wide, 0)
+	require.NoError(t, err)
+	require.Equal(t, byte(script.Op0), (*unlock)[len(*unlock)-1])
 }
