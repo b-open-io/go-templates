@@ -38,7 +38,7 @@ The repository includes templates for various use cases:
 - **[Cosign](./templates/cosign/README.md)** - Co-signing transactions with multiple parties
 - **[Inscription](./templates/inscription/README.md)** - On-chain NFT-like inscriptions
 - **[Lockup](./templates/lockup/README.md)** - Time-locked transactions
-- **[OrdLock](./templates/ordlock/README.md)** - Locking and unlocking functionality for ordinals
+- **[OrdLock](./templates/ordlock/README.md)** - Decode, purchase, and cancel existing ordinal listings (create is off)
 - **[OrdP2PKH](./templates/ordp2pkh/README.md)** - Ordinal-aware P2PKH transactions
 - **[P2PKH](./templates/p2pkh/README.md)** - Standard Pay-to-Public-Key-Hash transactions
 - **[Shrug](./templates/shrug/README.md)** - Experimental template for demo purposes

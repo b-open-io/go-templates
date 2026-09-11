@@ -10,10 +10,10 @@ All notable changes to this project will be documented in this file. The format 
 ## [Unreleased]
 
 ### Added
-- (Include new features or significant user-visible enhancements here.)
+- OrdLock `CancelListing` and `PurchaseListing` unlockers for existing listings.
 
 ### Changed
-- (Detail modifications that are non-breaking but relevant to the end-users.)
+- OrdLock listing create is disabled (OPL-4692). `Lock`/`Create` refuse. Decode, purchase, and cancel of existing listings stay on.
 
 ### Deprecated
 - (List features that are in the process of being phased out or replaced.)
